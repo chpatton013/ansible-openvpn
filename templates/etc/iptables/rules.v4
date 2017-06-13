@@ -1,0 +1,59 @@
+*filter
+
+# Allow all loopback ({{lo_interface}}) traffic and reject anything
+# to localhost that does not originate from {{lo_interface}}.
+--append INPUT --in-interface {{lo_interface}} --jump ACCEPT
+--append INPUT ! --in-interface {{lo_interface}} --source 127.0.0.0/8 --jump REJECT
+--append OUTPUT --out-interface {{lo_interface}} --jump ACCEPT
+
+# Allow ping and ICMP error returns.
+--append INPUT --protocol icmp --match state --state NEW --icmp-type 8 --jump ACCEPT
+--append INPUT --protocol icmp --match state --state ESTABLISHED,RELATED --jump ACCEPT
+--append OUTPUT --protocol icmp --jump ACCEPT
+
+# Allow incoming SSH.
+--append INPUT --in-interface {{eth_interface}} --protocol {{ssh_protocol}} --match state --state NEW,ESTABLISHED --destination-port {{ssh_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol {{ssh_protocol}} --match state --state ESTABLISHED --source-port {{ssh_port}} --jump ACCEPT
+
+# Allow outgoing SSH.
+--append INPUT --in-interface {{eth_interface}} --protocol {{ssh_protocol}} --match state --state ESTABLISHED --source-port {{ssh_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol {{ssh_protocol}} --match state --state NEW,ESTABLISHED --destination-port {{ssh_port}} --jump ACCEPT
+
+# Allow incoming Avahi.
+--append INPUT --in-interface {{eth_interface}} --protocol {{avahi_protocol}} --match state --state NEW,ESTABLISHED --destination-port {{avahi_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol {{avahi_protocol}} --match state --state ESTABLISHED --source-port {{avahi_port}} --jump ACCEPT
+
+# Allow outgoing Avahi.
+--append INPUT --in-interface {{eth_interface}} --protocol {{avahi_protocol}} --match state --state ESTABLISHED --source-port {{avahi_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol {{avahi_protocol}} --match state --state NEW,ESTABLISHED --destination-port {{avahi_port}} --jump ACCEPT
+
+# Allow incoming VPN connections.
+--append INPUT --in-interface {{eth_interface}} --protocol {{openvpn_protocol}} --match state --state NEW,ESTABLISHED --destination-port {{openvpn_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol {{openvpn_protocol}} --match state --state ESTABLISHED --source-port {{openvpn_port}} --jump ACCEPT
+
+# Allow outgoing DNS resolution and HTTP/S on {{eth_interface}}.
+# Necessary for updating the server and keeping time.
+--append INPUT --in-interface {{eth_interface}} --protocol udp --match state --state ESTABLISHED --source-port {{dns_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol udp --match state --state NEW,ESTABLISHED --destination-port {{dns_port}} --jump ACCEPT
+--append INPUT --in-interface {{eth_interface}} --protocol tcp --match state --state ESTABLISHED --source-port {{dns_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol tcp --match state --state NEW,ESTABLISHED --destination-port {{dns_port}} --jump ACCEPT
+--append INPUT --in-interface {{eth_interface}} --protocol {{http_protocol}} --match state --state ESTABLISHED --source-port {{http_port}} --jump ACCEPT
+--append INPUT --in-interface {{eth_interface}} --protocol {{http_protocol}} --match state --state ESTABLISHED --source-port {{https_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol {{https_protocol}} --match state --state NEW,ESTABLISHED --destination-port {{http_port}} --jump ACCEPT
+--append OUTPUT --out-interface {{eth_interface}} --protocol {{https_protocol}} --match state --state NEW,ESTABLISHED --destination-port {{https_port}} --jump ACCEPT
+
+# Allow established VPN traffic on the TUN interface.
+--append INPUT --in-interface {{tun_interface}} --jump ACCEPT
+--append OUTPUT --out-interface {{tun_interface}} --jump ACCEPT
+
+# Log any packets which don't fit the rules above...
+--append INPUT --match limit --limit {{iptables_log_limit}} --jump LOG --log-prefix "iptables_INPUT_denied: " --log-level {{iptables_log_level}}
+--append FORWARD --match limit --limit {{iptables_log_limit}} --jump LOG --log-prefix "iptables_FORWARD_denied: " --log-level {{iptables_log_level}}
+--append OUTPUT --match limit --limit {{iptables_log_limit}} --jump LOG --log-prefix "iptables_OUTPUT_denied: " --log-level {{iptables_log_level}}
+
+# ...and then reject them.
+--append INPUT --jump REJECT
+--append FORWARD --jump REJECT
+--append OUTPUT --jump REJECT
+
+COMMIT

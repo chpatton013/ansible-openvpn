@@ -1,0 +1,7 @@
+*filter
+
+--append INPUT --jump REJECT
+--append FORWARD --jump REJECT
+--append OUTPUT --jump REJECT
+
+COMMIT
