@@ -35,3 +35,12 @@ openvpn_key_country: US
 openvpn_key_province: CA
 openvpn_key_city: SanFrancisco
 openvpn_key_org_unit: MyOrganizationalUnit
+openvpn_client_names: []
+
+required_vars:
+- openvpn_key_org
+- openvpn_key_email
+- openvpn_key_name
+- openvpn_server_address
+client_required_vars:
+- openvpn_client_name

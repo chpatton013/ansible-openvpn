@@ -2,7 +2,6 @@
 - hosts: all
   vars_files:
   - vars.yaml
-  - required_vars.yaml
   tasks:
   - fail: msg="Variable '{{ item }}' is not defined"
     when: item not in hostvars[inventory_hostname]
@@ -107,4 +106,19 @@
       args:
         chdir: "{{openvpn_easy_rsa_directory}}"
         executable: /bin/bash # `source` cannot be run under `/bin/sh`
+    become: yes
+  - block: # OpenVPN client configuration
+    - name: Create template files
+      template: src={{item}} dest=/{{item}} owner=root group=root mode=0644 force=yes
+      with_items:
+      - etc/openvpn/client.ovpn
+    # Create an empty variable with the same name as the loop variable below.
+    # This variable must exist before the loop begins or it will not be
+    # available to the included tasklist (even though the loop sets it each
+    # iteration).
+    - set_fact: openvpn_client_name=""
+    - include: tasks/client.yaml
+      with_items: "{{openvpn_client_names}}"
+      loop_control:
+        loop_var: openvpn_client_name
     become: yes

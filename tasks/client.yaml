@@ -1,0 +1,55 @@
+- name: Gather required vars
+  set_fact:
+    full_required_vars: "{{ required_vars }} + {{ client_required_vars }}"
+- fail: msg="Variable '{{ item }}' is not defined"
+  when: item not in hostvars[inventory_hostname]
+  with_items: "{{full_required_vars}}"
+- block:
+  - name: Generate client keys
+    shell: |
+      source ./vars
+      ./pkitool {{openvpn_client_name}} # Create {{openvpn_client_name}}.{crt,csr,key}
+    args:
+      chdir: "{{openvpn_easy_rsa_directory}}"
+      executable: /bin/bash # `source` cannot be run under `/bin/sh`
+      creates:
+      - "{{openvpn_client_name}}.crt"
+      - "{{openvpn_client_name}}.csr"
+      - "{{openvpn_client_name}}.key"
+  - name: Check if client tarball exists
+    stat: path={{openvpn_keys_directory}}/{{openvpn_client_name}}.tar.gz
+    register: client_tarball_stat
+  - block:
+    - name: Create temporary tar directory
+      file:
+        path: "{{openvpn_keys_directory}}/{{openvpn_client_name}}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+    - name: Copy client files to tar directory
+      copy:
+        src: "{{item.src}}"
+        dest: "{{openvpn_keys_directory}}/{{openvpn_client_name}}/{{item.dest}}"
+        owner: root
+        group: root
+        mode: 0644
+        remote_src: yes
+        force: yes
+      with_items:
+      - { src: "{{openvpn_etc_directory}}/client.ovpn", dest: client.ovpn }
+      - { src: "{{openvpn_keys_directory}}/ca.crt", dest: ca.crt }
+      - { src: "{{openvpn_keys_directory}}/ta.key", dest: ta.key }
+      - { src: "{{openvpn_keys_directory}}/{{openvpn_client_name}}.crt", dest: client.crt }
+      - { src: "{{openvpn_keys_directory}}/{{openvpn_client_name}}.key", dest: client.key }
+    - name: Create client tarball
+      command: tar --create --gzip --file={{openvpn_client_name}}.tar.gz {{openvpn_client_name}}
+      args:
+        chdir: "{{openvpn_keys_directory}}"
+        creates: "{{openvpn_keys_directory}}/{{openvpn_client_name}}.tar.gz"
+    - name: Delete temporary directory
+      file:
+        path: "{{openvpn_keys_directory}}/{{openvpn_client_name}}"
+        state: absent
+    when: not client_tarball_stat.stat.exists
+  become: yes
