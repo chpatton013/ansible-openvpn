@@ -4,3 +4,6 @@
   - vars.yaml
   tasks:
   - include: tasks/client.yaml
+  - name: Restart openvpn service
+    systemd: name=openvpn state=restarted
+    become: yes

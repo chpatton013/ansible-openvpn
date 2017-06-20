@@ -106,6 +106,8 @@
       args:
         chdir: "{{openvpn_easy_rsa_directory}}"
         executable: /bin/bash # `source` cannot be run under `/bin/sh`
+    - name: Enable and start openvpn service
+      systemd: name=openvpn enabled=yes state=started
     become: yes
   - block: # OpenVPN client configuration
     - name: Create template files
@@ -121,4 +123,6 @@
       with_items: "{{openvpn_client_names}}"
       loop_control:
         loop_var: openvpn_client_name
+    - name: Restart openvpn service
+      systemd: name=openvpn state=restarted
     become: yes
