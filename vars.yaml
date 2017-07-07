@@ -23,6 +23,14 @@ openvpn_tunnel_type: tun # tun or tap
 openvpn_key_size: 4096 # 1024, 2048, or 4096
 openvpn_ca_expire: 3650
 openvpn_key_expire: 3650
+openvpn_tun_subnet: 10.8.0.0
+openvpn_tun_netmask: 255.255.255.0
+# A list of dictionaries containing `subnet` and `netmask` fields. For example:
+# - subnet: 192.168.1.0
+#   netmask: 255.255.255.0
+# - subnet: 192.168.2.0
+#   netmask: 255.255.255.0
+openvpn_routes: []
 openvpn_auth: SHA512
 openvpn_cipher: AES-256-CBC
 openvpn_tls_cipher: TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:TLS-DHE-RSA-WITH-AES-256-CBC-SHA:TLS-DHE-RSA-WITH-CAMELLIA-256-CBC-SHA:TLS-DHE-RSA-WITH-AES-128-CBC-SHA:TLS-DHE-RSA-WITH-CAMELLIA-128-CBC-SHA
@@ -35,6 +43,7 @@ openvpn_key_country: US
 openvpn_key_province: CA
 openvpn_key_city: SanFrancisco
 openvpn_key_org_unit: MyOrganizationalUnit
+# A list of strings.
 openvpn_client_names: []
 
 required_vars:
