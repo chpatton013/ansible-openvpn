@@ -1,4 +1,4 @@
-eth_interface: eth0
+lan_interface: eth0
 lo_interface: lo
 tun_interface: tun0
 

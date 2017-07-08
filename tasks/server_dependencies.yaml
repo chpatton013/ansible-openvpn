@@ -40,7 +40,7 @@
       value: 1
     - name: net.ipv6.conf.{{lo_interface}}.disable_ipv6
       value: 1
-    - name: net.ipv6.conf.{{eth_interface}}.disable_ipv6
+    - name: net.ipv6.conf.{{lan_interface}}.disable_ipv6
       value: 1
     when: disable_ipv6|default(true)|bool
   - name: Enable IPv4 forwarding
