@@ -13,6 +13,8 @@ http_protocol: tcp
 https_protocol: tcp
 ssh_protocol: tcp
 
+disable_ipv6: yes
+
 iptables_log_level: 4
 iptables_log_limit: 3/min
 

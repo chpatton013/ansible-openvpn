@@ -30,6 +30,7 @@
       dest: /etc/hosts
       regexp: '^(::1\s.*)'
       replace: '# \1'
+    when: disable_ipv6|default(true)|bool
   - name: Disable IPv6
     sysctl: name={{item.name}} value={{item.value}}
     with_items:
@@ -41,17 +42,20 @@
       value: 1
     - name: net.ipv6.conf.{{eth_interface}}.disable_ipv6
       value: 1
+    when: disable_ipv6|default(true)|bool
   - name: Enable IPv4 forwarding
     sysctl: name=net.ipv4.ip_forward value=1
-  - name: Reload iptables rules
+  - name: Reload IPv4 iptables rules
     shell: "{{item}}"
     with_items:
-    # IPv4
     - iptables --flush
     - iptables --delete-chain
     - iptables-restore < /etc/iptables/rules.v4
-    # IPv6
+  - name: Reload IPv4 iptables rules
+    shell: "{{item}}"
+    with_items:
     - ip6tables --flush
     - ip6tables --delete-chain
     - ip6tables-restore < /etc/iptables/rules.v6
+    when: disable_ipv6|default(true)|bool
   become: yes
