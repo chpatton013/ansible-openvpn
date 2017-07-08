@@ -1,3 +1,6 @@
+- fail: msg="Variable '{{ item }}' is not defined"
+  when: item not in hostvars[inventory_hostname]
+  with_items: "{{required_vars | default([])}}"
 - block:
   - name: Install packages
     apt: name={{item}} state=latest update_cache=yes

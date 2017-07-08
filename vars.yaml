@@ -46,10 +46,12 @@ openvpn_key_org_unit: MyOrganizationalUnit
 # A list of strings.
 openvpn_client_names: []
 
-required_vars:
-- openvpn_key_org
-- openvpn_key_email
-- openvpn_key_name
-- openvpn_server_address
-client_required_vars:
-- openvpn_client_name
+required_vars_by_task:
+  server_dependencies: []
+  server_configuration:
+  - openvpn_key_org
+  - openvpn_key_email
+  - openvpn_key_name
+  - openvpn_server_address
+  client:
+  - openvpn_client_name

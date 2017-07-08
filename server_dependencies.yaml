@@ -3,4 +3,5 @@
   vars_files:
   - vars.yaml
   tasks:
+  - set_fact: required_vars={{required_vars_by_task.server_dependencies}}
   - include: tasks/server_dependencies.yaml

@@ -3,6 +3,7 @@
   vars_files:
   - vars.yaml
   tasks:
+  - set_fact: required_vars={{required_vars_by_task.client}}
   - include: tasks/client.yaml
   - name: Restart openvpn service
     systemd: name=openvpn state=restarted

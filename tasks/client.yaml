@@ -1,9 +1,6 @@
-- name: Gather required vars
-  set_fact:
-    full_required_vars: "{{ required_vars }} + {{ client_required_vars }}"
 - fail: msg="Variable '{{ item }}' is not defined"
   when: item not in hostvars[inventory_hostname]
-  with_items: "{{full_required_vars}}"
+  with_items: "{{required_vars | default([])}}"
 - block:
   - name: Generate client keys
     shell: |

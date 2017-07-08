@@ -3,14 +3,14 @@
   vars_files:
   - vars.yaml
   tasks:
-  # These vars will be checked in server_configuration as well, but we can fail
-  # fast by checking for them here instead of after server_dependencies.
-  - fail: msg="Variable '{{ item }}' is not defined"
-    when: item not in hostvars[inventory_hostname]
-    with_items: "{{required_vars}}"
+  # OpenVPN server dependencies
+  - block:
+    - set_fact: required_vars={{required_vars_by_task.server_dependencies}}
+    - include: tasks/server_dependencies.yaml
   # OpenVPN server configuration
-  - include: tasks/server_dependencies.yaml
-  - include: tasks/server_configuration.yaml
+  - block:
+    - set_fact: required_vars={{required_vars_by_task.server_configuration}}
+    - include: tasks/server_configuration.yaml
   # OpenVPN client configuration
   - block:
     # Create an empty variable with the same name as the loop variable below.
@@ -18,10 +18,11 @@
     # available to the included tasklist (even though the loop sets it each
     # iteration).
     - set_fact: openvpn_client_name=""
+    - set_fact: required_vars={{required_vars_by_task.client}}
     - include: tasks/client.yaml
       with_items: "{{openvpn_client_names}}"
       loop_control:
         loop_var: openvpn_client_name
     - name: Restart openvpn service
       systemd: name=openvpn state=restarted
-    become: yes
+      become: yes

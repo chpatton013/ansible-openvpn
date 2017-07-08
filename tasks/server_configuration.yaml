@@ -1,6 +1,6 @@
 - fail: msg="Variable '{{ item }}' is not defined"
   when: item not in hostvars[inventory_hostname]
-  with_items: "{{required_vars}}"
+  with_items: "{{required_vars | default([])}}"
 - block:
   - name: Create openvpn user account
     user:
