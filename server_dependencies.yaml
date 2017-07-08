@@ -1,0 +1,6 @@
+---
+- hosts: all
+  vars_files:
+  - vars.yaml
+  tasks:
+  - include: tasks/server_dependencies.yaml

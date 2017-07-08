@@ -1,0 +1,54 @@
+- block:
+  - name: Install packages
+    apt: name={{item}} state=latest update_cache=yes
+    with_items:
+    - apt-listchanges
+    - easy-rsa
+    - iptables-persistent
+    - openvpn
+    - unattended-upgrades
+  - name: Create directories
+    file: path={{item}} state=directory owner=root group=root mode=0755 recurse=yes
+    with_items:
+    - etc/apt/apt.conf.d
+    - etc/iptables
+  - name: Create files
+    copy: src={{item}} dest=/{{item}} owner=root group=root mode=0644 force=yes
+    with_items:
+    - etc/apt/apt.conf.d/20auto-upgrades
+    - etc/apt/apt.conf.d/50unattended-upgrades
+    - etc/iptables/rules.v6
+  - name: Create template files
+    template: src={{item}} dest=/{{item}} owner=root group=root mode=0644 force=yes
+    with_items:
+    - etc/iptables/rules.v4
+  - name: Disable IPv6 localhost
+    replace:
+      dest: /etc/hosts
+      regexp: '^(::1\s.*)'
+      replace: '# \1'
+  - name: Disable IPv6
+    sysctl: name={{item.name}} value={{item.value}}
+    with_items:
+    - name: net.ipv6.conf.all.disable_ipv6
+      value: 1
+    - name: net.ipv6.conf.default.disable_ipv6
+      value: 1
+    - name: net.ipv6.conf.{{lo_interface}}.disable_ipv6
+      value: 1
+    - name: net.ipv6.conf.{{eth_interface}}.disable_ipv6
+      value: 1
+  - name: Enable IPv4 forwarding
+    sysctl: name=net.ipv4.ip_forward value=1
+  - name: Reload iptables rules
+    shell: "{{item}}"
+    with_items:
+    # IPv4
+    - iptables --flush
+    - iptables --delete-chain
+    - iptables-restore < /etc/iptables/rules.v4
+    # IPv6
+    - ip6tables --flush
+    - ip6tables --delete-chain
+    - ip6tables-restore < /etc/iptables/rules.v6
+  become: yes

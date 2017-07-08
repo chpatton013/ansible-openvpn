@@ -1,0 +1,53 @@
+- fail: msg="Variable '{{ item }}' is not defined"
+  when: item not in hostvars[inventory_hostname]
+  with_items: "{{required_vars}}"
+- block:
+  - name: Create openvpn user account
+    user:
+      createhome: no
+      name: "{{openvpn_user_name}}"
+      shell: /usr/sbin/nologin
+      system: yes
+  - name: Make CA dir
+    command: "make-cadir {{openvpn_easy_rsa_directory}}"
+    args:
+      creates: "{{openvpn_easy_rsa_directory}}"
+  - name: Remove and re-create keys directory.
+    shell: |
+      source ./vars
+      ./clean-all
+    args:
+      chdir: "{{openvpn_easy_rsa_directory}}"
+      executable: /bin/bash # `source` cannot be run under `/bin/sh`
+  - name: Link openssl config
+    file:
+      state: link
+      dest: "{{openvpn_easy_rsa_directory}}/openssl.cnf"
+      src: "{{openvpn_easy_rsa_directory}}/openssl-1.0.0.cnf"
+  - name: Create template files
+    template: src={{item}} dest=/{{item}} owner=root group=root mode=0644 force=yes
+    with_items:
+    - etc/openvpn/client.ovpn
+    - etc/openvpn/easy-rsa/vars
+    - etc/openvpn/server.conf
+  - name: Generate HMAC key file
+    shell: "openvpn --genkey --secret {{openvpn_keys_directory}}/ta.key"
+    args:
+      creates: "{{openvpn_keys_directory}}/ta.key"
+  - name: Generate DH PEM file
+    shell: "openssl dhparam {{openvpn_key_size}} > {{openvpn_dh_pem_file}}"
+    args:
+      creates: "{{openvpn_dh_pem_file}}"
+  - name: Generate certificate and server keys
+    shell: |
+      source ./vars
+      # Run pkitool directly instead of using provided helper scripts to avoid
+      # the --interact flag.
+      ./pkitool --initca # Create ca.{crt,key}
+      ./pkitool --server server # Create server.{crt,csr,key}
+    args:
+      chdir: "{{openvpn_easy_rsa_directory}}"
+      executable: /bin/bash # `source` cannot be run under `/bin/sh`
+  - name: Enable and start openvpn service
+    systemd: name=openvpn enabled=yes state=started
+  become: true
