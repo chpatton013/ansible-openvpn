@@ -26,5 +26,5 @@ apt-key adv --keyserver "$keyserver" --recv-keys "$debian_signing_key_2"
 echo "$backports_repo" > "$backports_list"
 
 # Install updated ansible.
-apt-get update --assume-yes
+apt-get update
 apt-get --target-release jessie-backports install --assume-yes "ansible"
